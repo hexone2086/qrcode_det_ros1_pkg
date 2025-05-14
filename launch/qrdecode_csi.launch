@@ -1,0 +1,8 @@
+<launch>
+  <node name="qr_decode_node" pkg="qrcode_det" type="qrcode_det_node" output="screen">
+    <param name="yolov5s_model_path" value="$(find qrcode_det)/yolov5s.onnx"/>
+    <param name="fsrcnn_model_path" value="$(find qrcode_det)/fsrcnn.onnx"/>
+    <param name="image_save_path" value="$(find qrcode_det)/saved_image"/>
+    <param name="use_csi_flag" value="true"/>
+  </node>
+</launch>

@@ -7,7 +7,7 @@
 cd ~/catkin_ws/src
 
 # Clone repository
-git clone https://github.com/hexone2086/qrcode_det_ros1_pkg.git
+git clone https://github.com/hexone2086/qrcode_det_ros1_pkg.git qrcode_det
 
 # To package
 cd qrcode_det

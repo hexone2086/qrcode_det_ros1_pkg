@@ -48,6 +48,7 @@ int main(int argc, char **argv) {
         // 当指定使用 USB 相机但未配置设备序号时
         ROS_ERROR("Failed to get usb_cam_index parameter");
     }
+    ros::param::get("~process_delay_ms", process_delay_ms);
     ros::param::get("~debug_view_full", debug_view_full);
     ros::param::get("~debug_view_det", debug_view_det);
 

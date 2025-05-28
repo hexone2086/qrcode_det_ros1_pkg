@@ -19,6 +19,7 @@
 extern bool use_csi_flag;
 extern bool debug_view_full;
 extern bool debug_view_det;
+extern int process_delay_ms;
 extern int usb_cam_index;
 extern std::atomic<bool> image_save_flag;
 extern std::string image_save_path;

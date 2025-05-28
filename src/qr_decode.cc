@@ -5,8 +5,8 @@ std::atomic<bool> image_save_flag(false);
 bool use_csi_flag = false;
 bool debug_view_det = false;
 bool debug_view_full = false;
-
 int usb_cam_index = 1;
+int process_delay_ms = 30;
 std::string image_save_path = "";
 
 // private variables
@@ -317,14 +317,6 @@ cv::Mat processFrame(cv::Mat &frame, Ort::Session &session,
   auto output_tensors = session.Run(Ort::RunOptions{nullptr}, input_names,
                                     input_tensors.data(), 1, output_names, 1);
 
-  // 结束计时
-  auto end_time = std::chrono::high_resolution_clock::now();
-  auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(
-      end_time - start_time);
-
-  // 输出推理时间
-  // std::cout << "Inference time: " << duration.count() << "ms" << std::endl;
-
   // Get output data
   float *output_data = output_tensors.front().GetTensorMutableData<float>();
   size_t output_size = std::accumulate(output_shape.begin(), output_shape.end(),
@@ -368,10 +360,12 @@ cv::Mat processFrame(cv::Mat &frame, Ort::Session &session,
       // Decode QR
       std::string qr_data = decodeWithZbar(cropped);
 
-      // Draw Decode result
-      std::string label = qr_data.empty() ? "No QR" : "QR: " + qr_data;
-      cv::putText(frame_disp, label, cv::Point(x1_abs, y1_abs - 30),
-                  cv::FONT_HERSHEY_SIMPLEX, 0.6, cv::Scalar(0, 255, 0), 2);
+      if (debug_view_full) {
+        // Draw Decode result
+        std::string label = qr_data.empty() ? "No QR" : "QR: " + qr_data;
+        cv::putText(frame_disp, label, cv::Point(x1_abs, y1_abs - 30),
+                    cv::FONT_HERSHEY_SIMPLEX, 0.6, cv::Scalar(0, 255, 0), 2);
+      }
 
       if (!qr_data.empty()) {
         std::cout << "Decoded: " << qr_data
@@ -379,12 +373,14 @@ cv::Mat processFrame(cv::Mat &frame, Ort::Session &session,
       }
     }
 
-    // 在 frame 上绘制检测框
-    cv::rectangle(frame_disp, cv::Point(x1_abs, y1_abs),
-                  cv::Point(x2_abs, y2_abs), cv::Scalar(0, 255, 0), 2);
-    std::string label = "QR: " + std::to_string(det.confidence);
-    cv::putText(frame_disp, label, cv::Point(x1_abs, y1_abs - 10),
-                cv::FONT_HERSHEY_SIMPLEX, 0.6, cv::Scalar(0, 255, 0), 2);
+    if (debug_view_full) {
+      // 在 frame 上绘制检测框
+      cv::rectangle(frame_disp, cv::Point(x1_abs, y1_abs),
+                    cv::Point(x2_abs, y2_abs), cv::Scalar(0, 255, 0), 2);
+      std::string label = "QR: " + std::to_string(det.confidence);
+      cv::putText(frame_disp, label, cv::Point(x1_abs, y1_abs - 10),
+                  cv::FONT_HERSHEY_SIMPLEX, 0.6, cv::Scalar(0, 255, 0), 2);
+    }
   }
 
   // Display
@@ -406,6 +402,20 @@ cv::Mat processFrame(cv::Mat &frame, Ort::Session &session,
     cv::imwrite(filename, frame);
     std::cout << "Image saved as " << filename << std::endl;
     image_save_flag = false; // Reset
+  }
+
+  // 结束计时
+  auto end_time = std::chrono::high_resolution_clock::now();
+  auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(
+      end_time - start_time);
+
+  // 输出推理时间
+  // std::cout << "Inference time: " << duration.count() << "ms" << std::endl;
+
+  if (duration.count() < process_delay_ms) {
+    // delay
+    int delay_ms = process_delay_ms - duration.count();
+    std::this_thread::sleep_for(std::chrono::milliseconds(delay_ms));
   }
 
   return frame;

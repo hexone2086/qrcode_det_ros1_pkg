@@ -43,8 +43,13 @@ int main(int argc, char **argv) {
         ROS_ERROR("Failed to get image_save_path parameter");
     }
     if (!ros::param::get("~use_csi_flag", use_csi_flag)) {
-        
     }
+    if (!ros::param::get("~usb_cam_index", usb_cam_index) && !use_csi_flag) {
+        // 当指定使用 USB 相机但未配置设备序号时
+        ROS_ERROR("Failed to get usb_cam_index parameter");
+    }
+    ros::param::get("~debug_view_full", debug_view_full);
+    ros::param::get("~debug_view_det", debug_view_det);
 
     // 初始化全局变量
     image_save_flag = false;

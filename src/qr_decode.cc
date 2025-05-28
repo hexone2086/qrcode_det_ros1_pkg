@@ -3,6 +3,10 @@
 // global variables
 std::atomic<bool> image_save_flag(false);
 bool use_csi_flag = false;
+bool debug_view_det = false;
+bool debug_view_full = false;
+
+int usb_cam_index = 1;
 std::string image_save_path = "";
 
 // private variables
@@ -254,7 +258,9 @@ std::string decodeWithZbar(const cv::Mat &image) {
   // cv::threshold(gray, gray, 0, 255, cv::THRESH_BINARY | cv::THRESH_OTSU);
 
   // Debug print
-  cv::imshow("sr_image", gray);
+  if (debug_view_det) {
+    cv::imshow("sr_image", gray);
+  }
 
   // Create zbar scanner
   zbar::ImageScanner scanner;
@@ -382,8 +388,10 @@ cv::Mat processFrame(cv::Mat &frame, Ort::Session &session,
   }
 
   // Display
-  cv::resize(frame_disp, frame_disp, cv::Size(640, 480));
-  cv::imshow("QR Detection", frame_disp);
+  if (debug_view_full) {
+    cv::resize(frame_disp, frame_disp, cv::Size(640, 480));
+    cv::imshow("QR Detection", frame_disp);
+  }
 
   // Save image if flag is set
   if (image_save_flag) {
@@ -403,7 +411,7 @@ cv::Mat processFrame(cv::Mat &frame, Ort::Session &session,
   return frame;
 }
 
-void runInference(const std::string &weightsPath, const std::string &source) {
+void runInference(const std::string &weightsPath) {
   // Initialize ONNX Runtime
   Ort::Env env(ORT_LOGGING_LEVEL_WARNING, "QRDetector");
   Ort::SessionOptions session_options;
@@ -450,9 +458,9 @@ void runInference(const std::string &weightsPath, const std::string &source) {
       std::cerr << "Error: Could not open camera" << std::endl;
       return;
     }
-  } else{
+  } else {
     // Check if source is a camera index (single digit)
-    int camera_index = source[0] - '0';
+    int camera_index = usb_cam_index - 0;
     cap = new cv::VideoCapture(camera_index, cv::CAP_V4L2);
     if (!cap->isOpened()) {
       std::cerr << "Error: Could not open camera " << camera_index << std::endl;
@@ -477,5 +485,5 @@ void thread_qr_decode(std::string yolo_weights_path,
   sr = new SuperResolution();
   sr->loadModel(sr_weights_path);
 
-  runInference(yolo_weights_path, "1");
+  runInference(yolo_weights_path);
 }

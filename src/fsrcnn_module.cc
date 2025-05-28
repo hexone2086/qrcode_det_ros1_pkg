@@ -23,6 +23,15 @@ bool SuperResolution::processImage(const cv::Mat& src,  cv::Mat& dist) {
         return false;
     }
 
+    // return raw image if the image is large than 160 pixel
+    if (input_image.rows > 160 || input_image.cols > 160) {
+        // std::cout << "skip sr" << std::endl;
+        dist = input_image;
+        return true;
+    }else{
+        // std::cout << "sr" << std::endl;
+    }
+
     cv::Mat ycrcb_image;
     cv::cvtColor(input_image, ycrcb_image, cv::COLOR_BGR2YCrCb);
     std::vector<cv::Mat> channels;

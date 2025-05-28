@@ -4,5 +4,8 @@
     <param name="fsrcnn_model_path" value="$(find qrcode_det)/fsrcnn.onnx"/>
     <param name="image_save_path" value="$(find qrcode_det)/saved_image"/>
     <param name="use_csi_flag" value="false"/>
+    <param name="debug_view_full" value="false"/>
+    <param name="debug_view_det" value="false"/>
+    <param name="usb_cam_index" value="0"/>
   </node>
 </launch>

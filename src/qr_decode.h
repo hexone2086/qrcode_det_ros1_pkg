@@ -17,6 +17,9 @@
 #include "fsrcnn_module.h"
 
 extern bool use_csi_flag;
+extern bool debug_view_full;
+extern bool debug_view_det;
+extern int usb_cam_index;
 extern std::atomic<bool> image_save_flag;
 extern std::string image_save_path;
 

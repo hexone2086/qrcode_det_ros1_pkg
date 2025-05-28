@@ -264,7 +264,7 @@ std::string decodeWithZbar(const cv::Mat &image) {
 
   // Create zbar scanner
   zbar::ImageScanner scanner;
-  scanner.set_config(zbar::ZBAR_NONE, zbar::ZBAR_CFG_ENABLE, 1);
+  scanner.set_config(zbar::ZBAR_QRCODE, zbar::ZBAR_CFG_ENABLE, 1);
 
   // Wrap image data
   zbar::Image zbar_image(gray.cols, gray.rows, "Y800", gray.data,
@@ -455,9 +455,9 @@ void runInference(const std::string &weightsPath) {
 
   const std::string pipeline =
       "nvarguscamerasrc sensor-id=0 ! "
-      "video/x-raw(memory:NVMM),width=1280,height=720,framerate=30/1 ! "
+      "video/x-raw(memory:NVMM),width=640,height=480,framerate=30/1 ! "
       "nvvidconv flip-method=2 ! "
-      "video/x-raw,width=1280,height=720,format=BGRx ! "
+      "video/x-raw,width=640,height=480,format=BGRx ! "
       "videoconvert ! "
       "appsink";
 

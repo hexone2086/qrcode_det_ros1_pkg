@@ -13,34 +13,36 @@ std::string image_save_path = "";
 cv::VideoCapture *cap;
 
 // Constants
-const cv::Size IMG_SIZE(640, 640);
-const float CONF_THRESH = 0.5f;
+const cv::Size IMG_SIZE(1280, 1280);
+const float CONF_THRESH = 0.3f;
 const float IOU_THRESH = 0.45f;
 const int MAX_DET = 100;
-const float EXPAND_RATIO = 0.3f;
-const float SR_SCALE = 2.0f;
+const float EXPAND_RATIO = 0.5f;
+const float SR_SCALE = 4.0f;
 
 SuperResolution *sr;
 
 // Helper functions
 cv::Mat applyCLAHE(const cv::Mat &image) {
   cv::Mat lab, l_clahe, lab_clahe;
-  cv::cvtColor(image, lab,
-               cv::COLOR_BGR2Lab); // Note: Changed from COLOR_BGR2LAB
+  cv::cvtColor(image, lab, cv::COLOR_BGR2Lab);
 
   std::vector<cv::Mat> lab_channels;
   cv::split(lab, lab_channels);
 
-  auto clahe = cv::createCLAHE(3.0, cv::Size(8, 8));
+  // 增加CLAHE的对比度限制和网格大小
+  auto clahe = cv::createCLAHE(4.0, cv::Size(16, 16));
   clahe->apply(lab_channels[0], l_clahe);
 
-  std::vector<cv::Mat> merged_channels = {l_clahe, lab_channels[1],
-                                          lab_channels[2]};
+  // 增强对比度
+  cv::Mat enhanced;
+  cv::convertScaleAbs(l_clahe, enhanced, 1.2, 0);
+
+  std::vector<cv::Mat> merged_channels = {enhanced, lab_channels[1], lab_channels[2]};
   cv::merge(merged_channels, lab_clahe);
 
   cv::Mat result;
-  cv::cvtColor(lab_clahe, result,
-               cv::COLOR_Lab2BGR); // Note: Changed from COLOR_LAB2BGR
+  cv::cvtColor(lab_clahe, result, cv::COLOR_Lab2BGR);
   return result;
 }
 
@@ -63,11 +65,18 @@ std::vector<float> preprocess(const cv::Mat &image, bool enhance = true) {
   cv::Mat processed;
   if (enhance) {
     processed = applyCLAHE(image);
+    
+    // 添加锐化处理
+    cv::Mat kernel = (cv::Mat_<float>(3,3) << 
+      -1, -1, -1,
+      -1,  9, -1,
+      -1, -1, -1);
+    cv::filter2D(processed, processed, -1, kernel);
   } else {
     processed = image.clone();
   }
 
-  cv::resize(processed, processed, IMG_SIZE);
+  cv::resize(processed, processed, IMG_SIZE, 0, 0, cv::INTER_CUBIC);
   cv::cvtColor(processed, processed, cv::COLOR_BGR2RGB);
 
   // Convert to CHW format
@@ -80,8 +89,6 @@ std::vector<float> preprocess(const cv::Mat &image, bool enhance = true) {
   for (const auto &channel : channels) {
     cv::Mat float_channel;
     channel.convertTo(float_channel, CV_32F, 1.0 / 255.0);
-
-    // Flatten the channel
     result.insert(result.end(), float_channel.ptr<float>(),
                   float_channel.ptr<float>() + float_channel.total());
   }
@@ -455,9 +462,9 @@ void runInference(const std::string &weightsPath) {
 
   const std::string pipeline =
       "nvarguscamerasrc sensor-id=0 ! "
-      "video/x-raw(memory:NVMM),width=640,height=480,framerate=30/1 ! "
+      "video/x-raw(memory:NVMM),width=1920,height=1080,framerate=30/1 ! "
       "nvvidconv flip-method=2 ! "
-      "video/x-raw,width=640,height=480,format=BGRx ! "
+      "video/x-raw,width=1920,height=1080,format=BGRx ! "
       "videoconvert ! "
       "appsink";
 
